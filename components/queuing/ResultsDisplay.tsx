@@ -32,6 +32,36 @@ interface ResultsDisplayProps {
 export function ResultsDisplay({ results, input }: ResultsDisplayProps) {
   const [selectedMetric, setSelectedMetric] = useState<{ id: string, label: string, value: number } | null>(null);
 
+  const getTimeConversionMarkdown = (val: number) => {
+    if (val === 0 || !isFinite(val)) return '';
+    
+    const formatTime = (totalSeconds: number) => {
+      const d = Math.floor(Math.abs(totalSeconds) / (3600 * 24));
+      const h = Math.floor((Math.abs(totalSeconds) % (3600 * 24)) / 3600);
+      const m = Math.floor((Math.abs(totalSeconds) % 3600) / 60);
+      const s = Math.round(Math.abs(totalSeconds) % 60);
+      
+      const parts = [];
+      if (d > 0) parts.push(`**${d}** días`);
+      if (h > 0 || d > 0) parts.push(`**${h}** hrs`);
+      if (m > 0 || h > 0 || d > 0) parts.push(`**${m}** min`);
+      parts.push(`**${s}** seg`);
+      
+      return parts.join(', ');
+    };
+
+    return `
+---
+
+**Conversión de Tiempo:**
+
+*Si la tasa ingresada es en **horas**:*
+🕒 ${formatTime(val * 3600)}
+
+*Si la tasa ingresada es en **minutos**:*
+🕒 ${formatTime(val * 60)}`;
+  };
+
   const getFormulaMarkdown = (id: string, label: string, value: number) => {
     const lam = input.lambda || '\\lambda';
     const mu = input.mu || '\\mu';
@@ -71,9 +101,9 @@ export function ResultsDisplay({ results, input }: ResultsDisplayProps) {
         }
         return `**Probabilidad de Espera:**\n\n$$ P_w = ${value.toFixed(4)} $$`;
       case 'w':
-        return `**Ley de Little:**\n\n$$ W = \\frac{L}{\\lambda} $$\n\nTambién expresable como:\n\n$$ W = W_q + \\frac{1}{\\mu} $$\n\n**Sustitución:**\n\n$$ W = \\frac{${results.l.toFixed(4)}}{${lam}} = ${value.toFixed(4)} $$`;
+        return `**Ley de Little:**\n\n$$ W = \\frac{L}{\\lambda} $$\n\nTambién expresable como:\n\n$$ W = W_q + \\frac{1}{\\mu} $$\n\n**Sustitución:**\n\n$$ W = \\frac{${results.l.toFixed(4)}}{${lam}} = ${value.toFixed(4)} $$\n\n---\n\n**Fórmula para conversión a minutos:**\n\nSi las tasas ($\\lambda$, $\\mu$) están en **horas**, multiplicamos el resultado por 60 para obtener los minutos equivalentes:\n\n$$ W_{(min)} = ${value.toFixed(4)} \\times 60 = ${(value * 60).toFixed(2)} \\text{ minutos} $$${getTimeConversionMarkdown(value)}`;
       case 'wq':
-        return `**Ley de Little en Cola:**\n\n$$ W_q = \\frac{L_q}{\\lambda} $$\n\n**Sustitución:**\n\n$$ W_q = \\frac{${results.lq.toFixed(4)}}{${lam}} = ${value.toFixed(4)} $$`;
+        return `**Ley de Little en Cola:**\n\n$$ W_q = \\frac{L_q}{\\lambda} $$\n\n**Sustitución:**\n\n$$ W_q = \\frac{${results.lq.toFixed(4)}}{${lam}} = ${value.toFixed(4)} $$\n\n---\n\n**Fórmula para conversión a minutos:**\n\nSi las tasas ($\\lambda$, $\\mu$) están en **horas**, multiplicamos por 60:\n\n$$ W_{q(min)} = ${value.toFixed(4)} \\times 60 = ${(value * 60).toFixed(2)} \\text{ minutos} $$${getTimeConversionMarkdown(value)}`;
       default:
         return `**Valor Calculado para ${label}:**\n\n$$ \\text{Valor} = ${value.toFixed(4)} $$`;
     }
@@ -164,28 +194,28 @@ export function ResultsDisplay({ results, input }: ResultsDisplayProps) {
             />
             <MetricCard
               label="Clientes en Sistema (L)"
-              value={formatDisplay(results.l, 2)}
+              value={formatDisplay(results.l, 4)}
               unit="clientes"
               color="purple"
               onClick={() => setSelectedMetric({ id: 'l', label: 'Clientes en Sistema (L)', value: results.l })}
             />
             <MetricCard
               label="Clientes en Cola (Lq)"
-              value={formatDisplay(results.lq, 2)}
+              value={formatDisplay(results.lq, 4)}
               unit="clientes"
               color="violet"
               onClick={() => setSelectedMetric({ id: 'lq', label: 'Clientes en Cola (Lq)', value: results.lq })}
             />
             <MetricCard
               label="Tiempo en Sistema (W)"
-              value={formatDisplay(results.w, 2)}
+              value={formatDisplay(results.w, 4)}
               unit="unidades"
               color="orange"
               onClick={() => setSelectedMetric({ id: 'w', label: 'Tiempo en Sistema (W)', value: results.w })}
             />
             <MetricCard
               label="Tiempo en Cola (Wq)"
-              value={formatDisplay(results.wq, 2)}
+              value={formatDisplay(results.wq, 4)}
               unit="unidades"
               color="amber"
               onClick={() => setSelectedMetric({ id: 'wq', label: 'Tiempo en Cola (Wq)', value: results.wq })}
